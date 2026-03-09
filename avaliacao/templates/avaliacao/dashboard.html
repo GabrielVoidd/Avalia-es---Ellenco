@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="mb-4">Resumo das Avaliações</h2>
+
+<div class="row text-center mb-5">
+
+    <div class="col-md-3 mb-3">
+        <div class="card h-100 shadow-sm border-start border-primary border-5">
+            <div class="card-body">
+                <h5 class="text-muted">Pendentes</h5>
+                <h2 class="text-primary fw-bold">{{ dados_grafico.pendente }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card h-100 shadow-sm border-start border-success border-5">
+            <div class="card-body">
+                <h5 class="text-muted">Concluídas</h5>
+                <h2 class="text-success fw-bold">{{ dados_grafico.concluida }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card h-100 shadow-sm border-start border-warning border-5">
+            <div class="card-body">
+                <h5 class="text-muted">Somente link</h5>
+                <h2 class="text-warning fw-bold">{{ dados_grafico.somente_link }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card h-100 shadow-sm border-start border-danger border-5">
+            <div class="card-body">
+                <h5 class="text-muted">Saiu da empresa</h5>
+                <h2 class="text-danger fw-bold">{{ dados_grafico.saiu_empresa }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        <h5 class="card-title text-secondary mb-4">Distribuição de Status</h5>
+        <canvas id="graficoAvaliacoes" height="80"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Espera o HTML carregar completamente antes de desenhar o gráfico
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('graficoAvaliacoes').getContext('2d');
+
+        new Chart(ctx, {
+            type: 'bar', // Gráfico de barras
+            data: {
+                // Adicionamos o "Pendentes" aqui no começo
+                labels: ['Pendentes', 'Concluídas', 'Somente link respondido', 'Saiu da empresa'],
+                datasets: [{
+                    label: 'Quantidade',
+                    data: [
+                        {{ dados_grafico.pendente }},
+                        {{ dados_grafico.concluida }},
+                        {{ dados_grafico.somente_link }},
+                        {{ dados_grafico.saiu_empresa }}
+                    ],
+                    // As 4 cores na mesma ordem dos dados
+                    backgroundColor: [
+                        '#0d6efd', // Azul (Primary) - Pendentes
+                        '#198754', // Verde (Success) - Concluídas
+                        '#ffc107', // Amarelo (Warning) - Somente Link
+                        '#dc3545'  // Vermelho (Danger) - Saiu da Empresa
+                    ]
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Isso vira as barras para ficarem horizontais
+                responsive: true,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1 // Força números inteiros (1, 2, 3...)
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false // Esconde a legenda extra do topo
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

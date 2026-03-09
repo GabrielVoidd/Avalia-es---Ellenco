@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h4 class="mb-0 text-primary">{% if editando %}Editar e Anexar Arquivos{% else %}Novo Registro{% endif %}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    {{ form.as_p }}
+
+                    {% if editando %}
+                        <h5 class="mt-4 border-bottom pb-2">Anexar PDFs das Avaliações</h5>
+                        {{ formset.management_form }}
+
+                        <div class="row mt-3">
+                            {% for subform in formset %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="p-3 border rounded bg-light">
+                                        <strong>{{ forloop.counter }}ª Avaliação ({{ subform.instance.data_prevista|date:"d/m/Y" }})</strong>
+
+                                        {% for hidden in subform.hidden_fields %}{{ hidden }}{% endfor %}
+
+                                        <div class="mt-2">
+                                            {% if subform.instance.arquivo_pdf %}
+                                                <div class="mb-2 p-2 bg-white border border-success rounded">
+                                                    <span class="badge bg-success">Arquivo Salvo</span>
+                                                    <a href="{{ subform.instance.arquivo_pdf.url }}" target="_blank" class="ms-2 text-decoration-none text-success fw-bold">
+                                                        Ver PDF Atual
+                                                    </a>
+                                                </div>
+                                                <small class="text-muted">Se quiser substituir, anexe um novo abaixo:</small>
+                                            {% endif %}
+
+                                            {{ subform.arquivo_pdf }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mt-3">
+                            <small>As datas das avaliações semestrais serão geradas automaticamente após você clicar em salvar. Você poderá anexar os PDFs editando o registro depois.</small>
+                        </div>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-primary w-100 mt-3">Salvar Registro</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
