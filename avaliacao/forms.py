@@ -10,8 +10,8 @@ class AvaliacaoForm(forms.ModelForm):
             'nome_estagiario': forms.TextInput(attrs={'class': 'form-control'}),
             'empresa': forms.TextInput(attrs={'class': 'form-control'}),
             'instituicao_ensino': forms.TextInput(attrs={'class': 'form-control'}),
-            'data_inicio': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'data_fim': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'data_inicio': forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),
+            'data_fim': forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
             'observacoes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
