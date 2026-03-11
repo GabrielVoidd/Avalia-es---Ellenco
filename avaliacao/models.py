@@ -87,6 +87,31 @@ class Avaliacao(models.Model):
         else:
             return 'warning'  # Laranja (para o "Somente o link...")
 
+    @property
+    def proxima_avaliacao_pendente(self):
+        proxima = self.avaliacao_semestrais.filter(
+            models.Q(arquivo_pdf__exact='') | models.Q(arquivo_pdf__isnull=True)
+        ).order_by('data_prevista').first()
+
+        return proxima.data_prevista if proxima else None
+
+    @property
+    def urgencia_cor(self):
+        proxima_data = self.proxima_avaliacao_pendente
+
+        if not proxima_data or self.status in ['C', 'ESE']:
+            return ''
+
+        diferenca = (proxima_data - date.today()).days
+
+        if diferenca < 0:
+            return 'table-danger'
+        elif diferenca <= 15:
+            return 'table-waring'
+
+        return ''
+
+
     def __str__(self):
         return f'{self.nome_estagiario}'
 

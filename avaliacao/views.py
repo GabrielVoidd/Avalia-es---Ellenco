@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Count
+from django.db.models import Count, Min, Q, F
 from .models import Avaliacao
 from .forms import AvaliacaoForm, AvaliacaoFormSet
 from django.contrib.auth.decorators import login_required
 import csv
 from django.http import HttpResponse
 from datetime import datetime
+from django.core.paginator import Paginator
 
 
 @login_required
@@ -66,7 +67,12 @@ def editar_avaliacao(request, pk):
 
 @login_required
 def lista_avaliacoes(request):
-    registros = Avaliacao.objects.all().order_by('-data_criacao')
+    registros = Avaliacao.objects.annotate(
+        proxima_data=Min(
+            'avaliacao_semestrais__data_prevista',
+            filter=Q(avaliacao_semestrais__arquivo_pdf__exact='') | Q(avaliacao_semestrais__arquivo_pdf__isnull=True)
+        )
+    ).order_by(F('proxima_data').asc(nulls_last=True))
 
     # 1. Pega os dados digitados nos filtros e na barra de pesquisa
     query_busca = request.GET.get('q')
@@ -96,8 +102,14 @@ def lista_avaliacoes(request):
     # 4. Total de Registros visíveis na tela no momento
     total_registros = registros.count()
 
+    # Fatiar os registros de 20 em 20 (ou o número que você preferir)
+    paginator = Paginator(registros, 20)
+    numero_pagina = request.GET.get('page')
+    page_obj = paginator.get_page(numero_pagina)
+
+    # Atualiza o contexto para enviar o objeto paginado em vez da lista inteira
     contexto = {
-        'registros': registros,
+        'registros': page_obj,  # <--- Mude de 'registros' para 'page_obj' aqui!
         'empresas_unicas': empresas_unicas,
         'status_unicos': status_unicos,
         'total_registros': total_registros

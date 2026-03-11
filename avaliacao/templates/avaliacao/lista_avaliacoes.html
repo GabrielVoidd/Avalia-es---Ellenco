@@ -39,11 +39,21 @@
 </form>
 
 {% for reg in registros %}
-<div class="card shadow-sm mb-4 border-0">
-    <div class="card-header bg-white border-top border-4 border-{{ reg.cor_status }}">
+<div class="card shadow-sm mb-4 {% if reg.urgencia_cor == 'table-danger' %}border-danger border-2{% elif reg.urgencia_cor == 'table-warning' %}border-warning border-2{% else %}border-0{% endif %}">
+
+    <div class="card-header {% if reg.urgencia_cor == 'table-danger' %}bg-danger bg-opacity-10{% elif reg.urgencia_cor == 'table-warning' %}bg-warning bg-opacity-10{% else %}bg-white{% endif %} border-top border-4 border-{{ reg.cor_status }}">
 
         <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 text-primary fw-bold">{{ reg.nome_estagiario }}</h5>
+            <div class="d-flex align-items-center">
+                <h5 class="mb-0 text-primary fw-bold">{{ reg.nome_estagiario }}</h5>
+
+                {% if reg.urgencia_cor == 'table-danger' %}
+                    <span class="badge bg-danger ms-3">⚠️ Avaliação Vencida!</span>
+                {% elif reg.urgencia_cor == 'table-warning' %}
+                    <span class="badge bg-warning text-dark ms-3">⏳ Vence em breve</span>
+                {% endif %}
+            </div>
+
             <div>
                 <span class="badge bg-{{ reg.cor_status }} px-3 py-2 me-2">
                     {{ reg.get_status_display }}
@@ -54,6 +64,13 @@
     </div>
 
     <div class="card-body">
+
+        {% if reg.proxima_avaliacao_pendente %}
+        <div class="alert {% if reg.urgencia_cor == 'table-danger' %}alert-danger{% elif reg.urgencia_cor == 'table-warning' %}alert-warning{% else %}alert-info{% endif %} py-2 mb-3">
+            <strong>Próxima avaliação a ser cobrada:</strong> {{ reg.proxima_avaliacao_pendente|date:"d/m/Y" }}
+        </div>
+        {% endif %}
+
         <p class="mb-1"><strong>Empresa:</strong> {{ reg.empresa }}</p>
         <p class="mb-1"><strong>Instituição:</strong> {{ reg.instituicao_ensino }}</p>
         <p class="mb-1"><strong>Período:</strong> {{ reg.data_inicio|date:"d/m/Y" }} a {{ reg.data_fim|date:"d/m/Y" }}</p>
@@ -69,7 +86,13 @@
                                 style="width: 15px; height: 15px; display: inline-block;">
                             </span>
 
-                            <strong>{{ forloop.counter }}ª:</strong>&nbsp;{{ avaliacao_filha.data_prevista|date:"d/m/Y" }}
+                            {% if avaliacao_filha.data_prevista == reg.proxima_avaliacao_pendente %}
+                                <strong class="{% if reg.urgencia_cor == 'table-danger' %}text-danger{% elif reg.urgencia_cor == 'table-warning' %}text-warning{% else %}text-primary{% endif %}">
+                                    {{ forloop.counter }}ª:&nbsp;{{ avaliacao_filha.data_prevista|date:"d/m/Y" }} (Próxima)
+                                </strong>
+                            {% else %}
+                                <strong>{{ forloop.counter }}ª:</strong>&nbsp;{{ avaliacao_filha.data_prevista|date:"d/m/Y" }}
+                            {% endif %}
 
                             {% if avaliacao_filha.arquivo_pdf %}
                                 <a href="{{ avaliacao_filha.arquivo_pdf.url }}" target="_blank" class="ms-2 badge bg-danger text-decoration-none">PDF</a>
@@ -84,4 +107,37 @@
 {% empty %}
     <div class="alert alert-info">Nenhum registro encontrado.</div>
 {% endfor %}
+{% if registros.has_other_pages %}
+<nav aria-label="Navegação de páginas" class="mt-4 mb-5">
+    <ul class="pagination justify-content-center shadow-sm">
+
+        {% if registros.has_previous %}
+            <li class="page-item">
+                <a class="page-link text-primary" href="?page={{ registros.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.empresa %}&empresa={{ request.GET.empresa }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                    &laquo; Anterior
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo; Anterior</span></li>
+        {% endif %}
+
+        <li class="page-item active">
+            <span class="page-link bg-primary border-primary">
+                Página {{ registros.number }} de {{ registros.paginator.num_pages }}
+            </span>
+        </li>
+
+        {% if registros.has_next %}
+            <li class="page-item">
+                <a class="page-link text-primary" href="?page={{ registros.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.empresa %}&empresa={{ request.GET.empresa }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                    Próxima &raquo;
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">Próxima &raquo;</span></li>
+        {% endif %}
+
+    </ul>
+</nav>
+{% endif %}
 {% endblock %}
