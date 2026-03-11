@@ -9,4 +9,5 @@ urlpatterns = [
     path('registros/', views.lista_avaliacoes, name='lista_avaliacoes'),
     path('editar/<int:pk>/', views.editar_avaliacao, name='editar_avaliacao'),
     path('exportar/', views.exportar_csv, name='exportar_csv'),
+    path('excluir/<int:pk>/', views.deletar_avaliacao, name='deletar_avaliacao'),
 ]

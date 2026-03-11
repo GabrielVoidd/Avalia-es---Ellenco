@@ -59,6 +59,8 @@
                     {{ reg.get_status_display }}
                 </span>
                 <a href="{% url 'avaliacao:editar_avaliacao' reg.id %}" class="btn btn-sm btn-outline-secondary">Editar / Anexar</a>
+
+                <a href="{% url 'avaliacao:deletar_avaliacao' reg.id %}" class="btn btn-sm btn-outline-danger ms-1">Excluir</a>
             </div>
         </div>
     </div>

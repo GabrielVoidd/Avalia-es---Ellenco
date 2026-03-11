@@ -158,3 +158,14 @@ def exportar_csv(request):
         ])
 
     return response
+
+
+@login_required
+def deletar_avaliacao(request, pk):
+    avaliacao = get_object_or_404(Avaliacao, pk=pk)
+
+    if request.method == 'POST':
+        avaliacao.delete()
+        return redirect('avaliacao:lista_avaliacoes')
+
+    return render(request, 'avaliacao/confirmar_exclusao.html', {'avaliacao': avaliacao})

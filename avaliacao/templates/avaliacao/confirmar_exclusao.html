@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card shadow border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">⚠️ Confirmar Exclusão</h5>
+            </div>
+            <div class="card-body text-center p-5">
+                <h4 class="mb-3">Você tem certeza?</h4>
+                <p class="fs-5">Deseja excluir permanentemente o registro de <strong>{{ avaliacao.nome_estagiario }}</strong>?</p>
+                
+                <div class="alert alert-warning mt-4 text-start">
+                    <strong>Atenção:</strong> Esta ação apagará todas as avaliações semestrais geradas para este estagiário, incluindo eventuais PDFs já anexados. Isso não pode ser desfeito.
+                </div>
+
+                <form method="POST" class="mt-4">
+                    {% csrf_token %}
+                    <a href="{% url 'avaliacao:lista_avaliacoes' %}" class="btn btn-secondary btn-lg me-2">Cancelar</a>
+                    <button type="submit" class="btn btn-danger btn-lg">Sim, Excluir Registro</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
