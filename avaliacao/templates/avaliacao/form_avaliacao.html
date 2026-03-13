@@ -8,6 +8,18 @@
                 <h4 class="mb-0 text-primary">{% if editando %}Editar e Anexar Arquivos{% else %}Novo Registro{% endif %}</h4>
             </div>
             <div class="card-body">
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger shadow-sm border-danger border-2">
+                        <h6 class="alert-heading fw-bold mb-1">⚠️ Encontramos um problema:</h6>
+                        <ul class="mb-0 ps-3">
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
                 <form method="POST" enctype="multipart/form-data">
                     {% csrf_token %}
 

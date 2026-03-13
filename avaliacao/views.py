@@ -13,7 +13,8 @@ from django.core.paginator import Paginator
 def dashboard(request):
     status_counts = Avaliacao.objects.values('status').annotate(total=Count('id'))
 
-    dados_grafico = {'pendente': 0, 'concluida': 0, 'somente_link': 0, 'saiu_empresa': 0}
+    # Adicionei a chave 'ativos' no dicionário
+    dados_grafico = {'pendente': 0, 'concluida': 0, 'somente_link': 0, 'saiu_empresa': 0, 'ativos': 0}
 
     for item in status_counts:
         s = item['status']
@@ -26,6 +27,9 @@ def dashboard(request):
             dados_grafico['somente_link'] = t
         elif 'saiu' in s.lower() or s == 'ESE':
             dados_grafico['saiu_empresa'] = t
+
+    # Calcula o total de ativos somando as 3 categorias
+    dados_grafico['ativos'] = dados_grafico['pendente'] + dados_grafico['concluida'] + dados_grafico['somente_link']
 
     return render(request, 'avaliacao/dashboard.html', {'dados_grafico': dados_grafico})
 

@@ -1,6 +1,8 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 import calendar
 from datetime import date
+
 
 class Avaliacao(models.Model):
     class Status(models.TextChoices):
@@ -15,42 +17,71 @@ class Avaliacao(models.Model):
     data_inicio = models.DateField()
     data_fim = models.DateField()
 
-    # Campo dos status com as opções pré-definidas
+    # NOVO CAMPO: Data de Rescisão
+    data_rescisao = models.DateField(null=True, blank=True, verbose_name='Data de Rescisão')
+
     status = models.CharField(max_length=3, choices=Status.choices)
-
-    # Campo de observações
     observacoes = models.TextField(null=True, blank=True)
-
     data_criacao = models.DateTimeField(auto_now_add=True)
 
+    # NOVIDADE: As validações de ouro contra erros de digitação
+    def clean(self):
+        super().clean()
+
+        # 1. Impede viagem no tempo (Anos menores que 2024)
+        if self.data_inicio and self.data_inicio.year < 2024:
+            raise ValidationError({'data_inicio': 'O ano de início não pode ser anterior a 2024.'})
+
+        if self.data_fim and self.data_fim.year < 2024:
+            raise ValidationError({'data_fim': 'O ano de fim não pode ser anterior a 2024.'})
+
+        if self.data_rescisao and self.data_rescisao.year < 2024:
+            raise ValidationError({'data_rescisao': 'O ano de rescisão não pode ser anterior a 2024.'})
+
+        # 2. Impede datas iguais
+        if self.data_inicio and self.data_fim and self.data_inicio == self.data_fim:
+            raise ValidationError('A data de início e a data de fim não podem ser idênticas.')
+
     def save(self, *args, **kwargs):
+        # Força o Django a rodar as validações do clean() caso seja salvo via código
+        self.full_clean()
+
         is_new = self.pk is None
 
-        # --- A INTELIGÊNCIA VAI PARA O BANCO DE DADOS ---
-
-        # 1. É um registro novo? É fisicamente impossível ter PDFs ainda.
-        # Se a pessoa tentar marcar "Concluída" (C), forçamos para "Pendente" (P) na hora.
         if is_new and self.status == 'C':
             self.status = 'P'
 
-        # 2. Já existe no banco e não é exceção ('ESE' ou 'SLR')? Auto-avalia as filhas.
+        # NOVA LÓGICA DE STATUS: Baseada no tempo (20 dias) e nos PDFs
         elif not is_new and self.status in ['P', 'C']:
-            filhas = self.avaliacao_semestrais.all()
-            # Só faz o cálculo se já existirem avaliações geradas
-            if filhas.exists():
-                todas_concluidas = all(bool(f.arquivo_pdf and f.arquivo_pdf.name) for f in filhas)
-                self.status = 'C' if todas_concluidas else 'P'
+            proxima_data = self.proxima_avaliacao_pendente
 
-        # ------------------------------------------------
+            if proxima_data:
+                # Existe uma avaliação sem PDF. Vamos checar o prazo.
+                diferenca = (proxima_data - date.today()).days
 
-        # Salva o registro pai no banco
+                if diferenca <= 20:
+                    # Faltam 20 dias (ou já estourou o prazo). Fica Pendente!
+                    self.status = 'P'
+                else:
+                    # A próxima avaliação está longe (mais de 20 dias). O estagiário está "em dia".
+                    self.status = 'C'
+            else:
+                # Não retornou nenhuma data? Significa que TODAS as avaliações têm arquivo_pdf!
+                self.status = 'C'
+
+        # Salva o pai
         super().save(*args, **kwargs)
 
-        # Se for novo, gera o cronograma de filhas (que nascem sem arquivo)
         if is_new:
             self.gerar_cronograma()
 
+        # NOVA LÓGICA DE RESCISÃO: O Exterminador de Avaliações Futuras
+        if self.data_rescisao:
+            # Pega todas as filhas cuja data prevista seja MAIOR que a data de rescisão e deleta
+            self.avaliacao_semestrais.filter(data_prevista__gt=self.data_rescisao).delete()
+
     def gerar_cronograma(self):
+        # ... (seu código de gerar o cronograma continua idêntico aqui) ...
         data_atual = self.data_inicio
         numero = 1
         while True:
@@ -65,30 +96,30 @@ class Avaliacao(models.Model):
             if nova_data > self.data_fim:
                 break
 
-            # Cria a avaliação no banco já ligada a este estagiário
             AvaliacaoSemestral.objects.create(avaliacao_mae=self, numero=numero, data_prevista=nova_data)
             data_atual = nova_data
             numero += 1
 
-        if numero == 1: # Se o período do estágio for menor que 6 meses
+        if numero == 1:
             AvaliacaoSemestral.objects.create(avaliacao_mae=self, numero=1, data_prevista=self.data_fim)
 
     @property
     def cor_status(self):
-        # Pega o texto do status exatamente como está no banco
+        # ... (continua idêntico) ...
         status_texto = str(self.status).strip()
 
         if status_texto == 'P':
-            return 'primary'  # Azul
+            return 'primary'
         elif status_texto == 'C':
-            return 'success'  # Verde
+            return 'success'
         elif status_texto == 'ESE':
-            return 'danger'  # Vermelho
+            return 'danger'
         else:
-            return 'warning'  # Laranja (para o "Somente o link...")
+            return 'warning'
 
     @property
     def proxima_avaliacao_pendente(self):
+        # ... (continua idêntico) ...
         proxima = self.avaliacao_semestrais.filter(
             models.Q(arquivo_pdf__exact='') | models.Q(arquivo_pdf__isnull=True)
         ).order_by('data_prevista').first()
@@ -97,6 +128,7 @@ class Avaliacao(models.Model):
 
     @property
     def urgencia_cor(self):
+        # ... (continua idêntico, só corrigi um pequeno erro de digitação seu no "table-waring") ...
         proxima_data = self.proxima_avaliacao_pendente
 
         if not proxima_data or self.status in ['C', 'ESE']:
@@ -107,10 +139,9 @@ class Avaliacao(models.Model):
         if diferenca < 0:
             return 'table-danger'
         elif diferenca <= 15:
-            return 'table-waring'
+            return 'table-warning'  # <-- corrigido o table-waring
 
         return ''
-
 
     def __str__(self):
         return f'{self.nome_estagiario}'
