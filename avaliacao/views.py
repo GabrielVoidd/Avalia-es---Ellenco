@@ -4,9 +4,14 @@ from .models import Avaliacao, AvaliacaoSemestral
 from .forms import AvaliacaoForm, AvaliacaoFormSet
 from django.contrib.auth.decorators import login_required
 import csv
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from datetime import datetime
 from django.core.paginator import Paginator
+import io
+from reportlab.lib.pagesizes import landscape, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
 
 
 @login_required
@@ -205,3 +210,73 @@ def remover_pdf_avaliacao(request, pk):
 
     # Volta pra mesma tela de edição de onde o usuário clicou
     return redirect('avaliacao:editar_avaliacao', pk=id_mae)
+
+
+@login_required
+def exportar_pdf(request):
+    # 1. Pega os mesmos filtros da tela
+    registros = Avaliacao.objects.all().order_by('-data_criacao')
+    query_busca = request.GET.get('q')
+    filtro_empresa = request.GET.get('empresa')
+    filtro_status = request.GET.get('status')
+
+    if query_busca:
+        registros = registros.filter(nome_estagiario__icontains=query_busca)
+    if filtro_empresa:
+        registros = registros.filter(empresa=filtro_empresa)
+    if filtro_status:
+        if filtro_status == 'ativos':
+            registros = registros.exclude(status='ESE')
+        else:
+            registros = registros.filter(status=filtro_status)
+
+    # 2. Configura o "Papel" do PDF (A4 Deitado)
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=30, leftMargin=30, topMargin=30,
+                            bottomMargin=30)
+    elementos = []
+
+    # 3. Título do Documento
+    estilos = getSampleStyleSheet()
+    titulo = Paragraph(f"Relatório de Avaliações - {datetime.now().strftime('%d/%m/%Y')}", estilos['Heading1'])
+    elementos.append(titulo)
+    elementos.append(Spacer(1, 12))  # Espaço em branco
+
+    # 4. Monta a Estrutura da Tabela
+    dados_tabela = [['Estagiário', 'Empresa', 'Instituição', 'Início', 'Fim', 'Status']]
+
+    for reg in registros:
+        dados_tabela.append([
+            reg.nome_estagiario[:25] + ('...' if len(reg.nome_estagiario) > 25 else ''),  # Corta nomes gigantes
+            reg.empresa[:20] + ('...' if len(reg.empresa) > 20 else ''),
+            reg.instituicao_ensino[:20] + ('...' if len(reg.instituicao_ensino) > 20 else ''),
+            reg.data_inicio.strftime("%d/%m/%Y"),
+            reg.data_fim.strftime("%d/%m/%Y"),
+            reg.get_status_display()
+        ])
+
+    # 5. O Design da Tabela (Cores, Bordas, Alinhamento)
+    tabela = Table(dados_tabela)
+    estilo_tabela = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0d6efd")),  # Cabeçalho Azul
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),  # Letra branca no cabeçalho
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),  # Centraliza tudo
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Cabeçalho em Negrito
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),  # Bordas da tabela
+    ])
+
+    # Faz o zebrado nas linhas pra ficar mais legível (uma branca, uma cinza clara)
+    for i in range(1, len(dados_tabela)):
+        if i % 2 == 0:
+            estilo_tabela.add('BACKGROUND', (0, i), (-1, i), colors.HexColor("#f8f9fa"))
+
+    tabela.setStyle(estilo_tabela)
+    elementos.append(tabela)
+
+    # 6. Gera o arquivo e manda pro navegador baixar
+    doc.build(elementos)
+    buffer.seek(0)
+
+    nome_arquivo = f'relatorio_avaliacoes_{datetime.now().strftime("%d-%m-%Y")}.pdf'
+    return FileResponse(buffer, as_attachment=True, filename=nome_arquivo)

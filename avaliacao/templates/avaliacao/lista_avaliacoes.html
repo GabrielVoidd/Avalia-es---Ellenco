@@ -31,9 +31,13 @@
         <div class="col-md-2">
             <button type="submit" class="btn btn-primary w-100">Filtrar</button>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-4 d-flex gap-2">
             <button type="submit" formaction="{% url 'avaliacao:exportar_csv' %}" class="btn btn-success w-100 fw-bold">
-                📥 Baixar Excel
+                📥 Excel
+            </button>
+
+            <button type="submit" formaction="{% url 'avaliacao:exportar_pdf' %}" class="btn btn-danger w-100 fw-bold">
+                📄 PDF
             </button>
         </div>
     </div>
