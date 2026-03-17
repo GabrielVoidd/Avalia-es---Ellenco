@@ -22,6 +22,7 @@
         <div class="col-md-3">
             <select name="status" class="form-select">
                 <option value="">Todos os Status</option>
+                <option value="ativos" {% if request.GET.status == 'ativos' %}selected{% endif %}>Somente Ativos</option>
                 {% for st in status_unicos %}
                     <option value="{{ st.sigla }}" {% if request.GET.status == st.sigla %}selected{% endif %}>{{ st.nome }}</option>
                 {% endfor %}

@@ -88,8 +88,15 @@ def lista_avaliacoes(request):
         registros = registros.filter(nome_estagiario__icontains=query_busca)
     if filtro_empresa:
         registros = registros.filter(empresa=filtro_empresa)
+
+    # --- A MÁGICA DO FILTRO FANTASMA AQUI ---
     if filtro_status:
-        registros = registros.filter(status=filtro_status)
+        if filtro_status == 'ativos':
+            # Se for "ativos", exclui quem saiu da empresa (ESE)
+            registros = registros.exclude(status='ESE')
+        else:
+            # Se for os outros (P, C, SLR, ESE), filtra normalmente
+            registros = registros.filter(status=filtro_status)
 
     # 3. Pega listas únicas para montar o Menu (Dropdown) do filtro no HTML
     empresas_unicas = Avaliacao.objects.values_list('empresa', flat=True).distinct()
@@ -113,7 +120,7 @@ def lista_avaliacoes(request):
 
     # Atualiza o contexto para enviar o objeto paginado em vez da lista inteira
     contexto = {
-        'registros': page_obj,  # <--- Mude de 'registros' para 'page_obj' aqui!
+        'registros': page_obj,
         'empresas_unicas': empresas_unicas,
         'status_unicos': status_unicos,
         'total_registros': total_registros
@@ -147,8 +154,13 @@ def exportar_csv(request):
         registros = registros.filter(nome_estagiario__icontains=query_busca)
     if filtro_empresa:
         registros = registros.filter(empresa=filtro_empresa)
+
+    # --- A MÁGICA DO FILTRO FANTASMA NO CSV TAMBÉM ---
     if filtro_status:
-        registros = registros.filter(status=filtro_status)
+        if filtro_status == 'ativos':
+            registros = registros.exclude(status='ESE')
+        else:
+            registros = registros.filter(status=filtro_status)
 
     # 4. Escreve linha por linha os dados encontrados
     for reg in registros:
