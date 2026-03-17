@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count, Min, Q, F
-from .models import Avaliacao
+from .models import Avaliacao, AvaliacaoSemestral
 from .forms import AvaliacaoForm, AvaliacaoFormSet
 from django.contrib.auth.decorators import login_required
 import csv
@@ -185,3 +185,23 @@ def deletar_avaliacao(request, pk):
         return redirect('avaliacao:lista_avaliacoes')
 
     return render(request, 'avaliacao/confirmar_exclusao.html', {'avaliacao': avaliacao})
+
+
+@login_required
+def remover_pdf_avaliacao(request, pk):
+    # Pega exatamente a avaliação filha (semestral) que tem o PDF errado
+    avaliacao_filha = get_object_or_404(AvaliacaoSemestral, pk=pk)
+
+    # Guarda o ID do pai pra gente saber pra qual tela voltar depois
+    id_mae = avaliacao_filha.avaliacao_mae.id
+
+    # Se o arquivo existir, apaga do disco e limpa o banco
+    if avaliacao_filha.arquivo_pdf:
+        avaliacao_filha.arquivo_pdf.delete(save=True)
+
+        # O PULO DO GATO: Salva o pai de novo!
+        # Isso faz o seu models.py rodar aquela regra de negócio dos 20 dias e voltar pra Pendente
+        avaliacao_filha.avaliacao_mae.save()
+
+    # Volta pra mesma tela de edição de onde o usuário clicou
+    return redirect('avaliacao:editar_avaliacao', pk=id_mae)

@@ -10,4 +10,5 @@ urlpatterns = [
     path('editar/<int:pk>/', views.editar_avaliacao, name='editar_avaliacao'),
     path('exportar/', views.exportar_csv, name='exportar_csv'),
     path('excluir/<int:pk>/', views.deletar_avaliacao, name='deletar_avaliacao'),
+    path('remover-pdf/<int:pk>/', views.remover_pdf_avaliacao, name='remover_pdf_avaliacao'),
 ]

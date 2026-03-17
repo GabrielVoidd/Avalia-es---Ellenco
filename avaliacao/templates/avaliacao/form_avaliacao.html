@@ -39,13 +39,21 @@
 
                                         <div class="mt-2">
                                             {% if subform.instance.arquivo_pdf %}
-                                                <div class="mb-2 p-2 bg-white border border-success rounded">
-                                                    <span class="badge bg-success">Arquivo Salvo</span>
-                                                    <a href="{{ subform.instance.arquivo_pdf.url }}" target="_blank" class="ms-2 text-decoration-none text-success fw-bold">
-                                                        Ver PDF Atual
+                                                <div class="mb-2 p-2 bg-white border border-success rounded d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="badge bg-success">Arquivo Salvo</span>
+                                                        <a href="{{ subform.instance.arquivo_pdf.url }}" target="_blank" class="ms-2 text-decoration-none text-success fw-bold">
+                                                            Ver PDF
+                                                        </a>
+                                                    </div>
+
+                                                    <a href="{% url 'avaliacao:remover_pdf_avaliacao' subform.instance.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Tem certeza que deseja apagar o documento? O status do registro será recalculado.')">
+                                                        🗑️ Remover
                                                     </a>
                                                 </div>
-                                                <small class="text-muted">Se quiser substituir, anexe um novo abaixo:</small>
+                                                <small class="text-muted mb-2 d-block">Se quiser substituir, você pode remover o atual ou anexar um novo abaixo:</small>
+                                            {% else %}
+                                                <small class="text-muted mb-2 d-block">Nenhum arquivo anexado.</small>
                                             {% endif %}
 
                                             {{ subform.arquivo_pdf }}

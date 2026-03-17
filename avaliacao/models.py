@@ -153,6 +153,9 @@ class AvaliacaoSemestral(models.Model):
     data_prevista = models.DateField()
     arquivo_pdf = models.FileField(upload_to='avaliacoes_pdfs/', blank=True, null=True)
 
+    class Meta:
+        ordering = ['data_prevista']
+
     @property
     def status(self):
         return 'Concluída' if self.arquivo_pdf else 'Pendente'
