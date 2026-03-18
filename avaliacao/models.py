@@ -51,22 +51,17 @@ class Avaliacao(models.Model):
         if is_new and self.status == 'C':
             self.status = 'P'
 
-        # NOVA LÓGICA DE STATUS: Baseada no tempo (20 dias) e nos PDFs
+        # LÓGICA DE STATUS: Baseada no tempo (20 dias) e nos PDFs
         elif not is_new and self.status in ['P', 'C']:
             proxima_data = self.proxima_avaliacao_pendente
 
             if proxima_data:
-                # Existe uma avaliação sem PDF. Vamos checar o prazo.
                 diferenca = (proxima_data - date.today()).days
-
                 if diferenca <= 20:
-                    # Faltam 20 dias (ou já estourou o prazo). Fica Pendente!
                     self.status = 'P'
                 else:
-                    # A próxima avaliação está longe (mais de 20 dias). O estagiário está "em dia".
                     self.status = 'C'
             else:
-                # Não retornou nenhuma data? Significa que TODAS as avaliações têm arquivo_pdf!
                 self.status = 'C'
 
         # Salva o pai
@@ -75,10 +70,18 @@ class Avaliacao(models.Model):
         if is_new:
             self.gerar_cronograma()
 
-        # NOVA LÓGICA DE RESCISÃO: O Exterminador de Avaliações Futuras
+        # LÓGICA DE RESCISÃO: O Exterminador de Avaliações Futuras
         if self.data_rescisao:
-            # Pega todas as filhas cuja data prevista seja MAIOR que a data de rescisão e deleta
+            # 1. Deleta todas as avaliações que estavam previstas para DEPOIS da rescisão
             self.avaliacao_semestrais.filter(data_prevista__gt=self.data_rescisao).delete()
+
+            # 2. TRAVA DE SEGURANÇA: Se deletou tudo, recria pelo menos 1 (Avaliação de Desligamento)
+            if not self.avaliacao_semestrais.exists():
+                AvaliacaoSemestral.objects.create(
+                    avaliacao_mae=self,
+                    numero=1,
+                    data_prevista=self.data_rescisao  # A data de cobrança vira o dia em que ele saiu
+                )
 
     def gerar_cronograma(self):
         # ... (seu código de gerar o cronograma continua idêntico aqui) ...
