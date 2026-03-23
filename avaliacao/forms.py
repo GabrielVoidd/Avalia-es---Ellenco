@@ -8,6 +8,7 @@ class AvaliacaoForm(forms.ModelForm):
         exclude = ['data_criacao']
         widgets = {
             'nome_estagiario': forms.TextInput(attrs={'class': 'form-control'}),
+            'telefone': forms.TextInput(attrs={'class': 'form-control'}),
             'empresa': forms.TextInput(attrs={'class': 'form-control'}),
             'instituicao_ensino': forms.TextInput(attrs={'class': 'form-control'}),
             'data_inicio': forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),

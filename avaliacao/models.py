@@ -10,8 +10,10 @@ class Avaliacao(models.Model):
         C = 'C', 'Concluída'
         SLR = 'SLR', 'Somente o link foi respondido'
         ESE = 'ESE', 'Estagiário(a) saiu da empresa'
+        APZ = 'APZ', 'Assinatura pendente no ZapSign'
 
     nome_estagiario = models.CharField(max_length=200, verbose_name='Nome do(a) estagiário(a)')
+    telefone = models.CharField(max_length=11, null=True, blank=True, verbose_name='Telefone celular do(a) estagiário(a)')
     empresa = models.CharField(max_length=250, verbose_name='Razão social ou nome fantasia da empresa')
     instituicao_ensino = models.CharField(max_length=250, verbose_name='Nome da escola ou faculdade')
     data_inicio = models.DateField()
