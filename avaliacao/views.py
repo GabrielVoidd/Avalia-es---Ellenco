@@ -85,6 +85,12 @@ def lista_avaliacoes(request):
     filtro_mes = request.GET.get('mes')
     filtro_ano = request.GET.get('ano')
 
+    # --- OS FILTROS QUE HAVIAM SUMIDO ---
+    if query_busca:
+        registros = registros.filter(nome_estagiario__icontains=query_busca)
+    if filtro_empresa:
+        registros = registros.filter(empresa=filtro_empresa)
+
     # --- BLOCO DE FILTROS INTELIGENTE ---
     if filtro_status:
         if filtro_status == 'ativos':
