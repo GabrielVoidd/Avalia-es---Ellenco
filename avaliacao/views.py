@@ -5,7 +5,7 @@ from .forms import AvaliacaoForm, AvaliacaoFormSet
 from django.contrib.auth.decorators import login_required
 import csv
 from django.http import HttpResponse, FileResponse
-from datetime import datetime
+from datetime import datetime, date
 from django.core.paginator import Paginator
 import io
 from reportlab.lib.pagesizes import landscape, A4
@@ -85,20 +85,31 @@ def lista_avaliacoes(request):
     filtro_mes = request.GET.get('mes')
     filtro_ano = request.GET.get('ano')
 
-    if query_busca:
-        registros = registros.filter(nome_estagiario__icontains=query_busca)
-    if filtro_empresa:
-        registros = registros.filter(empresa=filtro_empresa)
+    # --- BLOCO DE FILTROS INTELIGENTE ---
     if filtro_status:
         if filtro_status == 'ativos':
             registros = registros.exclude(status='ESE')
+        elif filtro_status == 'vencidas':
+            # Pega quem tem data da próxima avaliação menor que hoje e exclui quem já saiu da empresa
+            registros = registros.filter(proxima_data__lt=date.today()).exclude(status='ESE')
         else:
             registros = registros.filter(status=filtro_status)
 
     if filtro_mes:
-        registros = registros.filter(data_inicio__month=filtro_mes)
+        if filtro_status == 'vencidas':
+            # Se for vencida, o mês filtra pela data da cobrança
+            registros = registros.filter(proxima_data__month=filtro_mes)
+        else:
+            # Padrão: filtra pelo mês de início do estágio
+            registros = registros.filter(data_inicio__month=filtro_mes)
+
     if filtro_ano:
-        registros = registros.filter(data_inicio__year=filtro_ano)
+        if filtro_status == 'vencidas':
+            # Se for vencida, o ano filtra pela data da cobrança
+            registros = registros.filter(proxima_data__year=filtro_ano)
+        else:
+            # Padrão: filtra pelo ano de início do estágio
+            registros = registros.filter(data_inicio__year=filtro_ano)
 
     empresas_unicas = Avaliacao.objects.values_list('empresa', flat=True).distinct()
     status_bd = Avaliacao.objects.values_list('status', flat=True).distinct()
@@ -137,20 +148,31 @@ def exportar_csv(request):
     filtro_mes = request.GET.get('mes')
     filtro_ano = request.GET.get('ano')
 
-    if query_busca:
-        registros = registros.filter(nome_estagiario__icontains=query_busca)
-    if filtro_empresa:
-        registros = registros.filter(empresa=filtro_empresa)
+    # --- BLOCO DE FILTROS INTELIGENTE ---
     if filtro_status:
         if filtro_status == 'ativos':
             registros = registros.exclude(status='ESE')
+        elif filtro_status == 'vencidas':
+            # Pega quem tem data da próxima avaliação menor que hoje e exclui quem já saiu da empresa
+            registros = registros.filter(proxima_data__lt=date.today()).exclude(status='ESE')
         else:
             registros = registros.filter(status=filtro_status)
 
     if filtro_mes:
-        registros = registros.filter(data_inicio__month=filtro_mes)
+        if filtro_status == 'vencidas':
+            # Se for vencida, o mês filtra pela data da cobrança
+            registros = registros.filter(proxima_data__month=filtro_mes)
+        else:
+            # Padrão: filtra pelo mês de início do estágio
+            registros = registros.filter(data_inicio__month=filtro_mes)
+
     if filtro_ano:
-        registros = registros.filter(data_inicio__year=filtro_ano)
+        if filtro_status == 'vencidas':
+            # Se for vencida, o ano filtra pela data da cobrança
+            registros = registros.filter(proxima_data__year=filtro_ano)
+        else:
+            # Padrão: filtra pelo ano de início do estágio
+            registros = registros.filter(data_inicio__year=filtro_ano)
 
     for reg in registros:
         writer.writerow([
@@ -195,20 +217,31 @@ def exportar_pdf(request):
     filtro_mes = request.GET.get('mes')
     filtro_ano = request.GET.get('ano')
 
-    if query_busca:
-        registros = registros.filter(nome_estagiario__icontains=query_busca)
-    if filtro_empresa:
-        registros = registros.filter(empresa=filtro_empresa)
+    # --- BLOCO DE FILTROS INTELIGENTE ---
     if filtro_status:
         if filtro_status == 'ativos':
             registros = registros.exclude(status='ESE')
+        elif filtro_status == 'vencidas':
+            # Pega quem tem data da próxima avaliação menor que hoje e exclui quem já saiu da empresa
+            registros = registros.filter(proxima_data__lt=date.today()).exclude(status='ESE')
         else:
             registros = registros.filter(status=filtro_status)
 
     if filtro_mes:
-        registros = registros.filter(data_inicio__month=filtro_mes)
+        if filtro_status == 'vencidas':
+            # Se for vencida, o mês filtra pela data da cobrança
+            registros = registros.filter(proxima_data__month=filtro_mes)
+        else:
+            # Padrão: filtra pelo mês de início do estágio
+            registros = registros.filter(data_inicio__month=filtro_mes)
+
     if filtro_ano:
-        registros = registros.filter(data_inicio__year=filtro_ano)
+        if filtro_status == 'vencidas':
+            # Se for vencida, o ano filtra pela data da cobrança
+            registros = registros.filter(proxima_data__year=filtro_ano)
+        else:
+            # Padrão: filtra pelo ano de início do estágio
+            registros = registros.filter(data_inicio__year=filtro_ano)
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
