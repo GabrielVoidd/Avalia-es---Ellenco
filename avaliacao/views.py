@@ -141,12 +141,25 @@ def exportar_csv(request):
     writer = csv.writer(response, delimiter=';')
     writer.writerow(['Nome do Estagiário', 'Empresa', 'Instituição', 'Data Início', 'Data Fim', 'Status'])
 
-    registros = Avaliacao.objects.all().order_by('-data_criacao')
+    # 1. A MÁGICA DA ANOTAÇÃO (Calcula a proxima_data para o CSV)
+    registros = Avaliacao.objects.annotate(
+        proxima_data=Min(
+            'avaliacao_semestrais__data_prevista',
+            filter=Q(avaliacao_semestrais__arquivo_pdf__exact='') | Q(avaliacao_semestrais__arquivo_pdf__isnull=True)
+        )
+    ).order_by('-data_criacao')
+
     query_busca = request.GET.get('q')
     filtro_empresa = request.GET.get('empresa')
     filtro_status = request.GET.get('status')
     filtro_mes = request.GET.get('mes')
     filtro_ano = request.GET.get('ano')
+
+    # 2. FILTROS BÁSICOS (Recolocados para não perder a busca por nome e empresa)
+    if query_busca:
+        registros = registros.filter(nome_estagiario__icontains=query_busca)
+    if filtro_empresa:
+        registros = registros.filter(empresa=filtro_empresa)
 
     # --- BLOCO DE FILTROS INTELIGENTE ---
     if filtro_status:
@@ -160,18 +173,14 @@ def exportar_csv(request):
 
     if filtro_mes:
         if filtro_status == 'vencidas':
-            # Se for vencida, o mês filtra pela data da cobrança
             registros = registros.filter(proxima_data__month=filtro_mes)
         else:
-            # Padrão: filtra pelo mês de início do estágio
             registros = registros.filter(data_inicio__month=filtro_mes)
 
     if filtro_ano:
         if filtro_status == 'vencidas':
-            # Se for vencida, o ano filtra pela data da cobrança
             registros = registros.filter(proxima_data__year=filtro_ano)
         else:
-            # Padrão: filtra pelo ano de início do estágio
             registros = registros.filter(data_inicio__year=filtro_ano)
 
     for reg in registros:
@@ -210,12 +219,25 @@ def remover_pdf_avaliacao(request, pk):
 
 @login_required
 def exportar_pdf(request):
-    registros = Avaliacao.objects.all().order_by('-data_criacao')
+    # 1. A MÁGICA DA ANOTAÇÃO (Calcula a proxima_data para o PDF também)
+    registros = Avaliacao.objects.annotate(
+        proxima_data=Min(
+            'avaliacao_semestrais__data_prevista',
+            filter=Q(avaliacao_semestrais__arquivo_pdf__exact='') | Q(avaliacao_semestrais__arquivo_pdf__isnull=True)
+        )
+    ).order_by('-data_criacao')
+
     query_busca = request.GET.get('q')
     filtro_empresa = request.GET.get('empresa')
     filtro_status = request.GET.get('status')
     filtro_mes = request.GET.get('mes')
     filtro_ano = request.GET.get('ano')
+
+    # 2. FILTROS BÁSICOS (Recolocados para não perder a busca por nome e empresa)
+    if query_busca:
+        registros = registros.filter(nome_estagiario__icontains=query_busca)
+    if filtro_empresa:
+        registros = registros.filter(empresa=filtro_empresa)
 
     # --- BLOCO DE FILTROS INTELIGENTE ---
     if filtro_status:
@@ -229,18 +251,14 @@ def exportar_pdf(request):
 
     if filtro_mes:
         if filtro_status == 'vencidas':
-            # Se for vencida, o mês filtra pela data da cobrança
             registros = registros.filter(proxima_data__month=filtro_mes)
         else:
-            # Padrão: filtra pelo mês de início do estágio
             registros = registros.filter(data_inicio__month=filtro_mes)
 
     if filtro_ano:
         if filtro_status == 'vencidas':
-            # Se for vencida, o ano filtra pela data da cobrança
             registros = registros.filter(proxima_data__year=filtro_ano)
         else:
-            # Padrão: filtra pelo ano de início do estágio
             registros = registros.filter(data_inicio__year=filtro_ano)
 
     buffer = io.BytesIO()
