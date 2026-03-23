@@ -219,7 +219,7 @@ def remover_pdf_avaliacao(request, pk):
 
 @login_required
 def exportar_pdf(request):
-    # 1. A MÁGICA DA ANOTAÇÃO (Calcula a proxima_data para o PDF também)
+    # 1. A MÁGICA DA ANOTAÇÃO
     registros = Avaliacao.objects.annotate(
         proxima_data=Min(
             'avaliacao_semestrais__data_prevista',
@@ -233,7 +233,6 @@ def exportar_pdf(request):
     filtro_mes = request.GET.get('mes')
     filtro_ano = request.GET.get('ano')
 
-    # 2. FILTROS BÁSICOS (Recolocados para não perder a busca por nome e empresa)
     if query_busca:
         registros = registros.filter(nome_estagiario__icontains=query_busca)
     if filtro_empresa:
@@ -244,7 +243,6 @@ def exportar_pdf(request):
         if filtro_status == 'ativos':
             registros = registros.exclude(status='ESE')
         elif filtro_status == 'vencidas':
-            # Pega quem tem data da próxima avaliação menor que hoje e exclui quem já saiu da empresa
             registros = registros.filter(proxima_data__lt=date.today()).exclude(status='ESE')
         else:
             registros = registros.filter(status=filtro_status)
@@ -261,6 +259,7 @@ def exportar_pdf(request):
         else:
             registros = registros.filter(data_inicio__year=filtro_ano)
 
+    # 2. CONFIGURAÇÃO DO PDF
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
     elementos = []
@@ -268,10 +267,13 @@ def exportar_pdf(request):
     estilos = getSampleStyleSheet()
     estilo_titulo = ParagraphStyle('Titulo', parent=estilos['Heading1'], alignment=1, spaceAfter=20,
                                    textColor=colors.HexColor("#333333"))
-
     estilo_nome = ParagraphStyle('Nome', fontName='Helvetica-Bold', fontSize=9, textColor=colors.HexColor("#222222"))
     estilo_normal = ParagraphStyle('NormalCustom', fontName='Helvetica', fontSize=8,
                                    textColor=colors.HexColor("#444444"), leading=10)
+
+    # NOVO ESTILO: Para o total no final do documento (Alinhado à direita)
+    estilo_total = ParagraphStyle('Total', fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor("#222222"),
+                                  alignment=2)
 
     elementos.append(
         Paragraph(f"Relatório de Avaliações de Estagiários - {datetime.now().strftime('%d/%m/%Y')}", estilo_titulo))
@@ -284,15 +286,23 @@ def exportar_pdf(request):
         periodo_str = f"<b>Período:</b> {reg.data_inicio.strftime('%d/%m/%Y')} a {reg.data_fim.strftime('%d/%m/%Y')}"
         inst_str = f"<b>Instituição:</b> {reg.instituicao_ensino}"
 
+        # --- EXIBIÇÃO DA DATA VENCIDA/COBRANÇA NO PDF ---
+        if reg.proxima_data:
+            proxima_str = f"<b>Cobrança:</b> {reg.proxima_data.strftime('%d/%m/%Y')}"
+        else:
+            proxima_str = f"<b>Cobrança:</b> OK"
+
         p_nome = Paragraph(nome_str, estilo_nome)
         p_empresa = Paragraph(empresa_str, estilo_normal)
         p_status = Paragraph(status_str, estilo_normal)
         p_periodo = Paragraph(periodo_str, estilo_normal)
         p_inst = Paragraph(inst_str, estilo_normal)
+        p_proxima = Paragraph(proxima_str, estilo_normal)
 
+        # O layout agora usa a 3ª coluna da segunda linha para mostrar a data de cobrança
         dados_bloco = [
             [p_nome, p_empresa, p_status],
-            [p_periodo, p_inst, '']
+            [p_periodo, p_inst, p_proxima]
         ]
 
         tabela_bloco = Table(dados_bloco, colWidths=[180, 220, 135])
@@ -304,6 +314,10 @@ def exportar_pdf(request):
             ('BOTTOMPADDING', (0, 1), (-1, 1), 15),
         ]))
         elementos.append(tabela_bloco)
+
+    # --- INSERINDO O TOTAL DE REGISTROS NO FINAL ---
+    elementos.append(Spacer(1, 20))  # Dá um "Enter" extra para separar da tabela
+    elementos.append(Paragraph(f"Total de registros encontrados: {registros.count()}", estilo_total))
 
     doc.build(elementos)
     buffer.seek(0)
