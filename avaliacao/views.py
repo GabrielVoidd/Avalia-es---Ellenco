@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count, Min, Q, F
+from django.db.models.functions import Lower
 from .models import Avaliacao, AvaliacaoSemestral
 from .forms import AvaliacaoForm, AvaliacaoFormSet
 from django.contrib.auth.decorators import login_required
@@ -18,7 +19,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 def dashboard(request):
     status_counts = Avaliacao.objects.values('status').annotate(total=Count('id'))
 
-    dados_grafico = {'pendente': 0, 'concluida': 0, 'somente_link': 0, 'saiu_empresa': 0, 'ativos': 0}
+    dados_grafico = {'pendente': 0, 'concluida': 0, 'somente_link': 0, 'saiu_empresa': 0, 'ativos': 0, 'assinatura_pendente': 0}
 
     for item in status_counts:
         s = item['status']
@@ -31,6 +32,8 @@ def dashboard(request):
             dados_grafico['somente_link'] = t
         elif 'saiu' in s.lower() or s == 'ESE':
             dados_grafico['saiu_empresa'] = t
+        elif 'assinatura_pendente' in s.lower() or s == 'APZ':
+            dados_grafico['assinatura_pendente'] = t
 
     dados_grafico['ativos'] = dados_grafico['pendente'] + dados_grafico['concluida'] + dados_grafico['somente_link']
 
@@ -153,7 +156,7 @@ def exportar_csv(request):
             'avaliacao_semestrais__data_prevista',
             filter=Q(avaliacao_semestrais__arquivo_pdf__exact='') | Q(avaliacao_semestrais__arquivo_pdf__isnull=True)
         )
-    ).order_by('-data_criacao')
+    ).order_by(Lower('nome_estagiario'))
 
     query_busca = request.GET.get('q')
     filtro_empresa = request.GET.get('empresa')
@@ -231,7 +234,7 @@ def exportar_pdf(request):
             'avaliacao_semestrais__data_prevista',
             filter=Q(avaliacao_semestrais__arquivo_pdf__exact='') | Q(avaliacao_semestrais__arquivo_pdf__isnull=True)
         )
-    ).order_by('-data_criacao')
+    ).order_by(Lower('nome_estagiario'))
 
     query_busca = request.GET.get('q')
     filtro_empresa = request.GET.get('empresa')
