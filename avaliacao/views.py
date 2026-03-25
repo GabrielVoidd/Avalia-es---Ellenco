@@ -35,7 +35,7 @@ def dashboard(request):
         elif 'assinatura_pendente' in s.lower() or s == 'APZ':
             dados_grafico['assinatura_pendente'] = t
 
-    dados_grafico['ativos'] = dados_grafico['pendente'] + dados_grafico['concluida'] + dados_grafico['somente_link']
+    dados_grafico['ativos'] = dados_grafico['pendente'] + dados_grafico['concluida'] + dados_grafico['somente_link'] + dados_grafico['assinatura_pendente']
 
     return render(request, 'avaliacao/dashboard.html', {'dados_grafico': dados_grafico})
 
