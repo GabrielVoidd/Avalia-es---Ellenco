@@ -8,18 +8,21 @@
 
 <form method="GET" class="card p-3 mb-4 shadow-sm bg-light">
     <div class="row g-2 mb-2">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <input type="text" name="q" class="form-control" placeholder="Buscar por nome..." value="{{ request.GET.q }}">
         </div>
-        <div class="col-md-4">
-            <select name="empresa" class="form-select">
+        <div class="col-md-3">
+            <input type="text" name="instituicao" class="form-control" placeholder="Buscar Instituição..." value="{{ request.GET.instituicao }}">
+        </div>
+        <div class="col-md-3">
+            <select name="empresa" id="select-empresa" class="form-select">
                 <option value="">Todas as Empresas</option>
                 {% for emp in empresas_unicas %}
                     <option value="{{ emp }}" {% if request.GET.empresa == emp %}selected{% endif %}>{{ emp }}</option>
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <select name="status" class="form-select">
                 <option value="">Todos os Status</option>
                 <option value="ativos" {% if request.GET.status == 'ativos' %}selected{% endif %}>Somente Ativos</option>
@@ -150,7 +153,7 @@
 
         {% if registros.has_previous %}
             <li class="page-item">
-                <a class="page-link text-primary" href="?page={{ registros.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.empresa %}&empresa={{ request.GET.empresa }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}">
+                <a class="page-link text-primary" href="?page={{ registros.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.instituicao %}&instituicao={{ request.GET.instituicao }}{% endif %}{% if request.GET.empresa %}&empresa={{ request.GET.empresa }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}">
                     &laquo; Anterior
                 </a>
             </li>
@@ -166,7 +169,7 @@
 
         {% if registros.has_next %}
             <li class="page-item">
-                <a class="page-link text-primary" href="?page={{ registros.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.empresa %}&empresa={{ request.GET.empresa }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}">
+                <a class="page-link text-primary" href="?page={{ registros.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.instituicao %}&instituicao={{ request.GET.instituicao }}{% endif %}{% if request.GET.empresa %}&empresa={{ request.GET.empresa }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}">
                     Próxima &raquo;
                 </a>
             </li>
@@ -177,4 +180,20 @@
     </ul>
 </nav>
 {% endif %}
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Ativando o Select2 no campo de empresa
+        $('#select-empresa').select2({
+            placeholder: "Todas as Empresas",
+            allowClear: true,
+            width: '100%' // Para garantir que fique alinhado com o layout do Bootstrap
+        });
+    });
+</script>
+
 {% endblock %}
