@@ -5,7 +5,7 @@ from .models import Avaliacao, AvaliacaoSemestral
 from .forms import AvaliacaoForm, AvaliacaoFormSet
 from django.contrib.auth.decorators import login_required
 import csv
-from django.http import HttpResponse, FileResponse
+from django.http import HttpResponse, FileResponse, HttpResponseForbidden
 from datetime import datetime, date
 from django.core.paginator import Paginator
 import io
@@ -13,6 +13,26 @@ from reportlab.lib.pagesizes import landscape, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
+
+@login_required
+def historico_geral_avaliacoes(request):
+    # BLOQUEIO DE SEGURANÇA: Se não for supervisor/admin, toma erro 403.
+    if not request.user.is_staff: # Pode trocar por is_staff ou checagem de grupo
+        return HttpResponseForbidden("Você não tem permissão para acessar esta página.")
+
+    # Puxa o histórico de TODAS as avaliações, da mais recente para a mais antiga
+    historico_completo = Avaliacao.history.all().order_by('-history_date')
+
+    # Paginação (50 registros por página para não travar o navegador)
+    paginator = Paginator(historico_completo, 50)
+    numero_pagina = request.GET.get('page')
+    page_obj = paginator.get_page(numero_pagina)
+
+    contexto = {
+        'page_obj': page_obj,
+    }
+    return render(request, 'avaliacao/historico_geral.html', contexto)
 
 
 @login_required

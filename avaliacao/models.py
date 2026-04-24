@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 import calendar
 from datetime import date
+from simple_history.models import HistoricalRecords
 
 
 class Avaliacao(models.Model):
@@ -25,6 +26,8 @@ class Avaliacao(models.Model):
     status = models.CharField(max_length=3, choices=Status.choices)
     observacoes = models.TextField(null=True, blank=True)
     data_criacao = models.DateTimeField(auto_now_add=True)
+
+    history = HistoricalRecords()
 
     # NOVIDADE: As validações de ouro contra erros de digitação
     def clean(self):

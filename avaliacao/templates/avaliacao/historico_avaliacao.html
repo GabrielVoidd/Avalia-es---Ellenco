@@ -1,0 +1,83 @@
+{% extends 'base.html' %} {% block content %}
+<div class="container-fluid mt-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-history"></i> Auditoria Global de Avaliações</h5>
+            <span class="badge bg-secondary">Acesso Restrito</span>
+        </div>
+        
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Usuário (Autor da Ação)</th>
+                            <th>Estagiário Avaliado</th>
+                            <th>Ação</th>
+                            <th>Dados Registrados na Época</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in page_obj %}
+                        <tr>
+                            <td class="text-nowrap">{{ log.history_date|date:"d/m/Y H:i:s" }}</td>
+                            
+                            <td class="fw-bold text-primary">
+                                {{ log.history_user.get_full_name|default:log.history_user.username|default:"Sistema" }}
+                            </td>
+                            
+                            <td>{{ log.nome_estagiario|default:"Não informado" }}</td>
+                            
+                            <td>
+                                {% if log.history_type == '+' %} 
+                                    <span class="badge bg-success"><i class="fas fa-plus"></i> Criado</span>
+                                {% elif log.history_type == '~' %} 
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-pen"></i> Editado</span>
+                                {% elif log.history_type == '-' %} 
+                                    <span class="badge bg-danger"><i class="fas fa-trash"></i> Excluído</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td>
+                                <ul class="list-unstyled mb-0" style="font-size: 0.85rem;">
+                                    <li><strong>Status:</strong> {{ log.get_status_display }}</li>
+                                    <li><strong>Nota:</strong> {{ log.nota|default:"-" }}</li>
+                                    {% if log.comentario %}
+                                    <li class="text-muted text-truncate" style="max-width: 250px;" title="{{ log.comentario }}">
+                                        <strong>Obs:</strong> {{ log.comentario }}
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">Nenhum registro de auditoria encontrado.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        {% if page_obj.has_other_pages %}
+        <div class="card-footer bg-white d-flex justify-content-center">
+            <nav aria-label="Navegação de auditoria">
+                <ul class="pagination pagination-sm mb-0">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                    {% endif %}
+                    
+                    <li class="page-item active"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

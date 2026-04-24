@@ -72,6 +72,11 @@
             <button type="submit" formaction="{% url 'avaliacao:exportar_pdf' %}" class="btn btn-danger w-100 fw-bold">
                 📄 PDF
             </button>
+            {% if request.user.is_staff %}
+                <a href="{% url 'avaliacao:historico_geral_avaliacoes' %}" class="btn btn-dark ms-2" title="Visão de Supervisão">
+                    <i class="fas fa-shield-alt"></i> Histórico Global
+                </a>
+            {% endif %}
         </div>
     </div>
 </form>
