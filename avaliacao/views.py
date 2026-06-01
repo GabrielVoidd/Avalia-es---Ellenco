@@ -331,10 +331,10 @@ def exportar_pdf(request):
         tabela_bloco = Table(dados_bloco, colWidths=[180, 220, 135])
         tabela_bloco.setStyle(TableStyle([
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LINEBELOW', (0, 0), (-1, 0), 0.5, colors.lightgrey),
+            ('LINEBELOW', (0, -1), (-1, -1), 0.5, colors.lightgrey),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
             ('TOPPADDING', (0, 1), (-1, 1), 6),
-            ('BOTTOMPADDING', (0, 1), (-1, 1), 15),
+            ('BOTTOMPADDING', (0, -1), (-1, 1), 15),
         ]))
         elementos.append(tabela_bloco)
 
