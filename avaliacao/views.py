@@ -6,7 +6,7 @@ from .forms import AvaliacaoForm, AvaliacaoFormSet
 from django.contrib.auth.decorators import login_required
 import csv
 from django.http import HttpResponse, FileResponse, HttpResponseForbidden
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from django.core.paginator import Paginator
 import io
 from reportlab.lib.pagesizes import landscape, A4
@@ -59,7 +59,7 @@ def dashboard(request):
         if s == 'Concluída' or s == 'C' or 'saiu' in s.lower() or s == 'ESE':
             dados_grafico['concluida'] += t
 
-    dados_grafico['ativos'] = dados_grafico['pendente'] + dados_grafico['concluida'] + dados_grafico['somente_link'] + dados_grafico['assinatura_pendente']
+    dados_grafico['ativos'] = (dados_grafico['pendente'] + dados_grafico['concluida'] + dados_grafico['somente_link'] + dados_grafico['assinatura_pendente']) - dados_grafico['saiu_empresa']
 
     return render(request, 'avaliacao/dashboard.html', {'dados_grafico': dados_grafico})
 
@@ -111,21 +111,24 @@ def lista_avaliacoes(request):
     filtro_status = request.GET.get('status')
     filtro_mes = request.GET.get('mes')
     filtro_ano = request.GET.get('ano')
-    filtro_instituicao = request.GET.get('instituicao') # <--- NOVO CAMPO
+    filtro_instituicao = request.GET.get('instituicao')
 
     if query_busca:
         registros = registros.filter(nome_estagiario__icontains=query_busca)
     if filtro_empresa:
         registros = registros.filter(empresa=filtro_empresa)
-    if filtro_instituicao: # <--- FILTRO APLICADO
+    if filtro_instituicao:
         registros = registros.filter(instituicao_ensino__icontains=filtro_instituicao)
 
-    # --- BLOCO DE FILTROS INTELIGENTE ---
     if filtro_status:
         if filtro_status == 'ativos':
             registros = registros.exclude(status='ESE')
         elif filtro_status == 'vencidas':
             registros = registros.filter(proxima_data__lt=date.today()).exclude(status='ESE')
+        elif filtro_status == 'alerta_trinta':
+            hoje = date.today()
+            daqui_um_mes = hoje + timedelta(month=30)
+            registros = registros.filter(proxima_data__range=(hoje, daqui_um_mes)).exclude(status='ESE')
         else:
             registros = registros.filter(status=filtro_status)
 

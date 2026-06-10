@@ -7,6 +7,7 @@ from simple_history.models import HistoricalRecords
 
 class Avaliacao(models.Model):
     class Status(models.TextChoices):
+        A = 'A', 'Ativo' #
         P = 'P', 'Pendente'
         C = 'C', 'Concluída'
         SLR = 'SLR', 'Somente o link foi respondido'
@@ -54,7 +55,7 @@ class Avaliacao(models.Model):
         is_new = self.pk is None
 
         if is_new and self.status == 'C':
-            self.status = 'P'
+            self.status = 'A' #
 
         # LÓGICA DE STATUS: Baseada no tempo (20 dias) e nos PDFs
         elif not is_new and self.status in ['P', 'C']:
@@ -89,7 +90,6 @@ class Avaliacao(models.Model):
                 )
 
     def gerar_cronograma(self):
-        # ... (seu código de gerar o cronograma continua idêntico aqui) ...
         data_atual = self.data_inicio
         numero = 1
         while True:
@@ -113,7 +113,6 @@ class Avaliacao(models.Model):
 
     @property
     def cor_status(self):
-        # ... (continua idêntico) ...
         status_texto = str(self.status).strip()
 
         if status_texto == 'P':
@@ -127,7 +126,6 @@ class Avaliacao(models.Model):
 
     @property
     def proxima_avaliacao_pendente(self):
-        # ... (continua idêntico) ...
         proxima = self.avaliacao_semestrais.filter(
             models.Q(arquivo_pdf__exact='') | models.Q(arquivo_pdf__isnull=True)
         ).order_by('data_prevista').first()
@@ -136,7 +134,6 @@ class Avaliacao(models.Model):
 
     @property
     def urgencia_cor(self):
-        # ... (continua idêntico, só corrigi um pequeno erro de digitação seu no "table-waring") ...
         proxima_data = self.proxima_avaliacao_pendente
 
         if not proxima_data or self.status in ['C', 'ESE']:
@@ -147,7 +144,7 @@ class Avaliacao(models.Model):
         if diferenca < 0:
             return 'table-danger'
         elif diferenca <= 15:
-            return 'table-warning'  # <-- corrigido o table-waring
+            return 'table-warning'
 
         return ''
 
