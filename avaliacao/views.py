@@ -46,14 +46,18 @@ def dashboard(request):
         t = item['total']
         if s == 'Pendente' or s == 'P':
             dados_grafico['pendente'] = t
-        elif s == 'Concluída' or s == 'C':
-            dados_grafico['concluida'] = t
-        elif 'link' in s.lower() or s == 'SLR':
+
+        if 'link' in s.lower() or s == 'SLR':
             dados_grafico['somente_link'] = t
-        elif 'saiu' in s.lower() or s == 'ESE':
+
+        if 'saiu' in s.lower() or s == 'ESE':
             dados_grafico['saiu_empresa'] = t
-        elif 'assinatura_pendente' in s.lower() or s == 'APZ':
+
+        if 'assinatura_pendente' in s.lower() or s == 'APZ':
             dados_grafico['assinatura_pendente'] = t
+
+        if s == 'Concluída' or s == 'C' or 'saiu' in s.lower() or s == 'ESE':
+            dados_grafico['concluida'] += t
 
     dados_grafico['ativos'] = dados_grafico['pendente'] + dados_grafico['concluida'] + dados_grafico['somente_link'] + dados_grafico['assinatura_pendente']
 
