@@ -59,7 +59,7 @@ def dashboard(request):
         if s == 'Concluída' or s == 'C' or 'saiu' in s.lower() or s == 'ESE':
             dados_grafico['concluida'] += t
 
-    dados_grafico['ativos'] = (dados_grafico['pendente'] + dados_grafico['concluida'] + dados_grafico['somente_link'] + dados_grafico['assinatura_pendente']) - dados_grafico['saiu_empresa']
+    dados_grafico['ativos'] = Avaliacao.objects.all().count() - dados_grafico['saiu_empresa']
 
     return render(request, 'avaliacao/dashboard.html', {'dados_grafico': dados_grafico})
 
