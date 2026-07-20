@@ -56,7 +56,8 @@ def dashboard(request):
         if 'assinatura_pendente' in s.lower() or s == 'APZ':
             dados_grafico['assinatura_pendente'] = t
 
-        if s == 'Concluída' or s == 'C' or 'saiu' in s.lower() or s == 'ESE':
+        if s == 'Concluída' or s == 'C':
+            # or 'saiu' in s.lower() or s == 'ESE'
             dados_grafico['concluida'] += t
 
     dados_grafico['ativos'] = Avaliacao.objects.all().count() - dados_grafico['saiu_empresa']
@@ -198,7 +199,9 @@ def exportar_csv(request):
     # --- BLOCO DE FILTROS INTELIGENTE ---
     if filtro_status:
         if filtro_status == 'ativos':
-            registros = registros.exclude(status='ESE')
+            registros = registros.exclude(
+                Q(status__icontains='saiu') | Q(status='ESE')
+            )
         elif filtro_status == 'vencidas':
             registros = registros.filter(proxima_data__lt=date.today()).exclude(status='ESE')
         else:
